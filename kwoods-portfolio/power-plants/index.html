@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset=utf-8 />
+    <title>Geo409 Map 02</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: whitesmoke;
+            font-family: Lato, sans-serif;
+            color: #0D0000;
+        }
+        header {
+            padding: 6px 10%;
+        }
+        h1 {
+            display: inline-block;
+            margin-right: 20px;
+            color: #001323;
+        }
+        h2 {
+            display: inline-block;
+            color: #001323;
+        }
+        #map {
+            width: 80%;
+            height: 540px;
+            margin: 10px auto;
+        }
+        footer {
+            padding: 6px 10%;
+            width: 80%;
+        }
+        p {
+            font-size: 1em;
+            color: #001323;
+            text-align: left;
+            
+        }
+        /* Additional style rules go here! */
+        
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Hydro, Coal and Pumped Power Plants in The USA</h1>
+        <h2>Map 3</h2>
+    </header>
+
+    <div id='map'></div>
+
+    <footer>
+        <p>Map Authored by Kaylen Woods</p>
+        <p>Click the map one to view power plants within a 500 mile radius of the click point. Double click the map to view power plants within a 200 mile radius of the click point.</p>
+        
+    </footer>
+        
+    <script src="power-plants-assignment.js"></script>>
+    <script>
+         var distance2
+          
+            
+        var map = L.map('map', {
+            center: [39.8282, -98.5795],
+            zoom: 4,
+            doubleClickZoom: false
+            
+        });
+            
+        var tiles = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+	attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
+	subdomains: 'abcd',
+	minZoom: 0,
+	maxZoom: 18
+});   
+        map.addLayer(tiles);
+        
+        var allplants = L.layerGroup();
+            allplants.addTo(map);
+        
+      var hyLayer = L.geoJson(plants, {
+            pointToLayer: function(feature, latlng){
+                return L.circleMarker(latlng);
+            },
+            filter: function(feature){
+                if(feature.properties.source["Hydro"]){
+                    return feature;
+                }
+            },
+            style: function(feature){
+                return{
+                    color: '#e34a33',
+                    fillColor: '#e34a33',
+                    weight: 1,
+                    stroke: 1,
+                    fillOpacity: .8,
+                    radius: getRadius(feature.properties.capacity)
+                }          
+            }
+      }).addTo(map);
+        
+        var coLayer = L.geoJson(plants, {
+            pointToLayer: function(feature, latlng){
+                return L.circleMarker(latlng);
+            },
+            filter: function(feature){
+                if(feature.properties.source["Petroleum"]){
+                    return feature;
+                }
+            },
+            style: function(feature){
+                return{
+                    color: '#fdbb84',
+                    fillColor: '#fdbb84',
+                    weight: 1,
+                    stroke: 1,
+                    fillOpacity: .8,
+                    radius: getRadius(feature.properties.capacity)
+                }          
+            }
+      }).addTo(map);
+        
+        var pumpLayer = L.geoJson(plants, {
+            pointToLayer: function(feature, latlng){
+                return L.circleMarker(latlng);
+            },
+            filter: function(feature){
+                if(feature.properties.source["Pumped Storage"]){
+                    return feature;
+                }
+            },
+            style: function(feature){
+                return{
+                    color: '#fee8c8',
+                    fillColor: '#fee8c8',
+                    weight: 1,
+                    stroke: 1,
+                    fillOpacity: .8,
+                    radius: getRadius(feature.properties.capacity)
+                }          
+            }
+      }).addTo(map);
+        
+        map.on('click', function(e){
+            hyLayer.eachLayer(function(layer) {
+                var distance = e.latlng.distanceTo(layer.getLatLng())/1000;
+                                
+                layer.bindPopup(+layer.feature.properties.plant_name+"<br>"+layer.feature.properties.source+"<br> I am <b>" +distance.toLocaleString()+"km </b><br> from the click point");                  
+                
+                if(distance > 500){
+                    layer.setStyle({
+                        stroke: false,
+                        fill: false
+                    });
+                } else {
+                    layer.setStyle({
+                        stroke: true,
+                        fill: true
+                    });
+                }
+            
+                
+            });
+            pumpLayer.eachLayer(function(layer){
+                var distance2 = e.latlng.distanceTo(layer.getLatLng())/1000;
+                
+                 layer.bindPopup(+layer.feature.properties.plant_name+"<br>"+layer.feature.properties.source+"<br> I am <b>" +distance2.toLocaleString()+"km </b><br> from the click point");
+                
+                if(distance2 > 500){
+                    layer.setStyle({
+                        stroke: false,
+                        fill: false,
+                    });
+                } else {
+                    layer.setStyle({
+                        stroke: true,
+                        fill: true
+                    });
+                }                 
+                             
+            });
+            coLayer.eachLayer(function(layer){
+                var distance3 = e.latlng.distanceTo(layer.getLatLng())/1000;
+                
+                 layer.bindPopup(+layer.feature.properties.plant_name+"<br>"+layer.feature.properties.source+"<br> I am <b>" +distance3.toLocaleString()+"km </b><br> from the click point");
+                
+                if(distance3 > 500){
+                    layer.setStyle({
+                        stroke: false,
+                        fill: false
+                    });
+                } else {
+                    layer.setStyle({
+                        stroke: true,
+                        fill: true
+                    });
+                }
+            
+            });
+        });
+        
+        map.on('dblclick', function(e){
+            coLayer.eachLayer(function(layer){
+                var distance4 = e.latlng.distanceTo(layer.getLatLng())/1000;
+                
+                 layer.bindPopup(+layer.feature.properties.plant_name+"<br>"+layer.feature.properties.source+"<br> I am <b>" +distance4.toLocaleString()+"km </b><br> from the click point");
+                
+                if(distance4 > 200){
+                    layer.setStyle({
+                        stroke: false,
+                        fill: false
+                    });
+                } else {
+                    layer.setStyle({
+                        stroke: true,
+                        fill: true
+                    });
+                }
+            
+            });    
+            hyLayer.eachLayer(function(layer){
+                var distance5 = e.latlng.distanceTo(layer.getLatLng())/1000;
+                
+                 layer.bindPopup(+layer.feature.properties.plant_name+"<br>"+layer.feature.properties.source+"<br> I am <b>" +distance5.toLocaleString()+"km </b><br> from the click point");
+                
+                if(distance5 > 200){
+                    layer.setStyle({
+                        stroke: false,
+                        fill: false
+                    });
+                } else {
+                    layer.setStyle({
+                        stroke: true,
+                        fill: true
+                    });
+                }
+            
+            });
+            pumpLayer.eachLayer(function(layer){
+                var distance6 = e.latlng.distanceTo(layer.getLatLng())/1000;
+                
+                 layer.bindPopup(+layer.feature.properties.plant_name+"<br>"+layer.feature.properties.source+"<br> I am <b>" +distance6.toLocaleString()+"km </b><br> from the click point");
+                
+                if(distance6 > 200){
+                    layer.setStyle({
+                        stroke: false,
+                        fill: false
+                    });
+                } else {
+                    layer.setStyle({
+                        stroke: true,
+                        fill: true
+                    });
+                }
+            
+            });
+        });
+        
+                    
+    function getRadius(area){
+        var radius = Math.sqrt(area/Math.PI) *.7;
+            return radius;
+        }          
+                    
+          // add JavaScript here
+        
+        
+    </script>
+    
+</body>
+
+</html>
