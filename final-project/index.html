@@ -135,7 +135,7 @@
             //Also binds a popup with selected info for that county
             dataLayer.eachLayer(function(layer) {
                 
-                var props = layer.feature.properties;
+                var props = layer.feature.info;
                 
                 layer.setStyle({
                     fillColor: getColor(props[attribute], breaks)
@@ -146,9 +146,48 @@
         
         // function to update the map
         
-        // function get the class breaks   
+        // function get the class breaks
+        function getClassBreaks() {
+            
+            var values = [];
+            
+            dataLayer.eachLayer(function(layer) {
+                
+              
+                var value = layer.feature.info[attribute];
+                
+               
+                
+                values.push(value);
+                
+                
+                
+            }); 
+           
+            
+        
+           var breaks = ss.jenks(values, 3);
+            console.log(breaks);
+            
+            
+            return breaks;
+            
+        }
         
         // function to get the color value
+        function getColor(d, breaks) {
+            if(d <= breaks[1]) {
+                return '#feebe2';
+            } else if(d <= breaks[2]) {
+                return '#fbb4b9';
+            } else if(d <= breaks[3]) {
+                return '#f768a1';
+            } else if(d <= breaks[4]) {
+                return '#c51b8a'
+            } else if(d <= breaks[5]) {
+                return '#7a0177'
+            }
+        }
                 
         // function to draw the legend
         
