@@ -26,8 +26,17 @@
             padding: 6px 10%;
         }
         h1 {
+            position: absolute;
+            z-index: 100;
             padding: 8px 15px;
             margin: 0; 
+            top: 10px;
+            left: 60px;
+            color: whitesmoke;
+            font-size: 1.5em;
+            font-weight: bold;
+            background: rgba(25,25,25,0.8);
+            border-radius: 5px;
         }
         #map {
             position: absolute;
@@ -43,11 +52,58 @@
             font-size: 1em;
             color: #001323;
         }   
+        
+        #ui-controls {
+            position: absolute;
+            top: 60px;
+            left: 60px;
+            z-index: 100;
+            
+    
+        }
+        
+        .legend {
+        padding: 6px 8px;
+        top: 50px;
+        left: 50px;
+        font-size: 1em;
+        background: rgba(255,255,255,0.8);
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        border-radius: 5px;
+    }
+        .legend h3 {
+        font-size: 1.1em;
+        font-weight: bolder;
+        color: #001323;
+        margin: 0;
+    }
+        .legend li {
+        list-style-type: none;
+        height: 22px;
+    }
+        .legend span {
+        width: 20px;
+        height: 20px;
+        float: left;
+        margin-right: 10px;
+    }
     </style>
 </head>
 
 <body>
-    <h1>Map Title Goes Here</h1>
+    <h1>United States Driving Data (2013)</h1>
+    <div id = 'ui-controls'>
+        <label>Select a data attribute:<br>
+            <select name= "stats">
+            <option value = "MILES_TRAV" selected> Vehicle Miles Traveled</option>
+            <option value = "POP">Population</option>
+            <option value = "CRASH_F">Fatal Crashes</option>
+            <option value = "DEATHS">Deaths</option>
+            <option value = "DEATHS_MILES">Deaths per 100 million vehicle miles</option>
+            <opiton value = "DEATHS_POP">Deaths per 10000 population</opiton>
+            </select>
+            </label> 
+    </div>
     <div id='map'></div>
     
     <script>
@@ -71,6 +127,10 @@
         // declare global variables
             var dataLayer,
                 attribute = "MILES_TRAV"
+            
+            
+       
+        
 
         // AJAX requests to load data files
             $.getJSON("united-states.json", function(states) {
@@ -93,11 +153,26 @@
                     
                     drawMap(states, data);
                     
+                    $('select[name= "stats"]').change(function() {
+            
+            attribute = $(this).val();
+            drawMap(states, data);
+                        
+            
+                        
+            
+            
+        });
                       
                 }
             });
+                
+            
             
             });
+        drawLegend();
+        
+        
             
            
  
@@ -126,25 +201,38 @@
 
         // function to draw the map
         function drawMap(states, data){
-            processData(states, data);
+            
+         processData(states, data);
+            
          var breaks = getClassBreaks();//calls the getClassBreaks function
+            
+       
             
             //calls the getColor function to set the color of each county based on 
             //the class breaks recently found and its specific value of the option
             //that the user previously selected from the dropdown box
             //Also binds a popup with selected info for that county
             dataLayer.eachLayer(function(layer) {
+                console.log(layer);
                 
                 var props = layer.feature.info;
                 
                 layer.setStyle({
                     fillColor: getColor(props[attribute], breaks)
                 });
+                
+                layer.bindPopup("<b>"+layer.feature.info["STATE"]+"</b><br>" +getLabel(attribute)+ ":" +layer.feature.info[attribute]);
+                                
+                updateLegend(breaks);
+                
             });
+            
+            
         }
         
         
-        // function to update the map
+        
+        
         
         // function get the class breaks
         function getClassBreaks() {
@@ -166,9 +254,9 @@
            
             
         
-           var breaks = ss.jenks(values, 3);
-            console.log(breaks);
+           var breaks = ss.quantile(values, [0, 0.2, 0.4, 0.6, 0.8, 1]);
             
+            console.log(breaks.length);
             
             return breaks;
             
@@ -177,23 +265,78 @@
         // function to get the color value
         function getColor(d, breaks) {
             if(d <= breaks[1]) {
-                return '#feebe2';
+                return '#fee5d9';
             } else if(d <= breaks[2]) {
-                return '#fbb4b9';
+                return '#fcae91';
             } else if(d <= breaks[3]) {
-                return '#f768a1';
+                return '#fb6a4a';
             } else if(d <= breaks[4]) {
-                return '#c51b8a'
+                return '#de2d26';
             } else if(d <= breaks[5]) {
-                return '#7a0177'
+                return '#a50f15';
             }
         }
                 
         // function to draw the legend
+         function drawLegend(){
+
+        
+        var legend = L.control({position: 'topleft'});
+
+       
+        legend.onAdd = function (map) {
+
+        
+            var div = L.DomUtil.create('div', 'legend');
+
+                        
+            return div;
+        };
+
+        
+        legend.addTo(map);
+    }
+        
         
         // function to update the legend
+        function updateLegend(breaks) {
+            
+            var legend = $('.legend').html("<h3>" +getLabel(attribute)+ "</h3><ul>");
+            
+            for (var i = 0; i < breaks.length-1; i++) {
+                
+                var color = getColor(breaks[i + 1], breaks);
+
+                
+                    legend.append('<li><span style="background:' + color + '"></span> ' +
+                    (breaks[i]).toLocaleString() + ' &mdash; ' + 
+                    (breaks[i + 1]).toLocaleString() + '</li>');
+            }
+            legend.append("</ul>");
+        
+        }
 
         // function to create the range slider
+        function getLabel(attribute) {
+            if(attribute == "POP"){
+                return "Population";
+            } else if (attribute == "MILES_TRAV") {
+                return "Vehicle Miles Traveled";
+            } else if (attribute == "DEATHS") {
+                return "Deaths";
+            } else if (attribute == "DEATHS_POP") {
+                return "Deaths per 100,000 Population";
+            } else if (attribute == "CRASH_F") {
+                return "Fatal Crashes";
+            } else if (attribute == "DEATHS_MILES") {
+                return "Deaths per 100 Million Vehicle Miles";
+            }
+                
+        
+        }
+        
+        
+        
 
     </script>
     
